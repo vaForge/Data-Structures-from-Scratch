@@ -1,3 +1,4 @@
+#pragma once
 #include<iostream>
 using namespace std;
 // Maps use Binary-Search trees to store elements in cpp
@@ -9,18 +10,34 @@ private:
         V value;
         Node *left;
         Node *right;
-        Node(K k, V v): key(k),value(v),left(NULL),right(NULL){}
+        int height;
+        Node(K k, V v): key(k),value(v),height(1),left(NULL),right(NULL){}
     };
     Node *root;
-    
+
     Node *insert(Node *root,K key,V value){
-        if(!root) return NULL;
+        if(!root) return new Node(key,value);
         if(key < root->key){
             root->left = insert(root->left,key,value);
         }else if(key > root->key){
             root->right = insert(root->right,key,value);
         }else{
             root->value = value;
+            return root;
+        }
+        root->height = 1 + max(getHeight(root->left),getHeight(root->right));
+        int balance = getBal(root);
+        if(balance > 1 && key < root->left->key){      //left left 
+            return rightRotate(root);
+        }
+        if(balance < -1 && key > root->right->key){    // right right
+            return leftRotate(root);
+        }
+        if(balance > 1 && key > root->left->key){      //left right
+            return rotateLeftRight(root);
+        }
+        if(balance < -1 && key < root->right->key){    //right left
+            return rotateRightLeft(root);
         }
         return root;
     }
@@ -61,11 +78,59 @@ private:
                 root->right = erase(root->right,next->key);
             }
         }
+        root->height = 1 + max(getHeight(root->left),getHeight(root->right));
+        int balance = getBal(root);
+        if(balance > 1 && key < root->left->key){      //left left 
+            return rightRotate(root);
+        }
+        if(balance < -1 && key > root->right->key){    // right right
+            return leftRotate(root);
+        }
+        if(balance > 1 && key > root->left->key){      //left right
+            return rotateLeftRight(root);
+        }
+        if(balance < -1 && key < root->right->key){    //right left
+            return rotateRightLeft(root);
+        }
         return root;
+    }
+
+    int getHeight(Node *node){
+        return node? node->height:0;
+    }
+    int getBal(Node *node){
+        return node? getHeight(node->left) - getHeight(node->right) : 0;
+    }
+
+    Node *rightRotate(Node *y){
+        Node *x = y->left;
+        Node *temp = x->right;
+        x->right = y;
+        y->left = temp;
+        y->height = 1 + max(getHeight(y->left),getHeight(y->right));
+        x->height = 1 + max(getHeight(x->left),getHeight(x->right));
+        return x;
+    }
+    Node* leftRotate(Node* x){
+        Node* y = x->right;
+        Node* temp = y->left;
+        y->left = x;
+        x->right = temp;
+        x->height = max(getHeight(x->left), getHeight(x->right)) + 1;
+        y->height = max(getHeight(y->left), getHeight(y->right)) + 1;
+        return y;
+    }
+    Node *rotateLeftRight(Node *node){
+        node->left = leftRotate(node->left);
+        return rightRotate(node);
+    }
+    Node *rotateRightLeft(Node *node){
+        node->right = rightRotate(node->right);
+        return leftRotate(node);
     }
 public:
     Map() : root(NULL) {}
-    void insert(K key, V value){ root = insert(key,value); }
+    void insert(K key, V value){ root = insert(root,key,value); }
     void erase(K key){
         root = erase(root,key);
     }
@@ -74,6 +139,5 @@ public:
         if(node) return node->value;
         throw runtime_error("Not found");
     }
-    
 
 };
